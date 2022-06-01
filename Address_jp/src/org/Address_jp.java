@@ -265,6 +265,30 @@ public class Address_jp {
 
 
 	/**
+	 * 住所を取得
+	 *
+	 * @param void
+	 * @return 住所<br>
+	 * ex) 東京都新宿区西新宿
+	 */
+	public String getAddressAll() {
+		return address1 + address2 + address3;
+	}
+
+
+	/**
+	 * 住所(フリガナ)を取得
+	 *
+	 * @param void
+	 * @return 住所(フリガナ)<br>
+	 * ex) トウキョウトシンジュククニシシンジュク
+	 */
+	public String getAddressKana() {
+		return kana1 + kana2 + kana3;
+	}
+
+
+	/**
 	 * {Private Method}
 	 *
 	 * <p>
