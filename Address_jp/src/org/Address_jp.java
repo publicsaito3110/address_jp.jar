@@ -49,6 +49,8 @@ public class Address_jp {
 	//-----------------
 	public Address_jp(int zipCode) {
 
+		BufferedReader bufferReader = null;
+
 		try {
 			//1.接続するための設定をする
 
@@ -71,25 +73,25 @@ public class Address_jp {
 
 			// 3.リクエスとボディに書き込みを行う
 			//HttpURLConnectionからOutputStreamを取得し、json文字列を書き込む
-			PrintStream ps = new PrintStream(httpConn.getOutputStream());
-			ps.close();
+			PrintStream printStream = new PrintStream(httpConn.getOutputStream());
+			printStream.close();
 
 
 			// 4.レスポンスを受け取る
 			//正常終了時はHttpStatusCode 200が返ってくる
 			if (httpConn.getResponseCode() != 200) {
-				this.executeException("HttpStatus is error");
+				throw new UnsupportedException("HttpStatus is error");
 			}
 
 			//HttpURLConnectionからInputStreamを取得し、読み出す
-			BufferedReader br = new BufferedReader(new InputStreamReader(httpConn.getInputStream(), "UTF-8"));
+			bufferReader = new BufferedReader(new InputStreamReader(httpConn.getInputStream(), "UTF-8"));
 
 			//レスポンスされたJsonから必要な値のみ抽出
-			StringBuilder sb = new StringBuilder();
+			StringBuilder jsonSb = new StringBuilder();
 			String line;
 			int lineCount = 1;
 
-			while ((line = br.readLine()) != null) {
+			while ((line = bufferReader.readLine()) != null) {
 
 				if (lineCount < 4) {
 					lineCount++;
@@ -99,23 +101,25 @@ public class Address_jp {
 					break;
 				}
 
-				sb.append(line);//4-13
+				jsonSb.append(line);//4-13
 				lineCount++;
 			}
 
+			//InputStreamを閉じる
+			bufferReader.close();
+
 			//sbが正常に終わらなかったとき
 			if (lineCount != 14) {
-				this.executeException("zip-code is not found");
+				throw new UnsupportedException("zip-code is not found");
 			}
-			//InputStreamを閉じる
-			br.close();
+
 
 			//Json形式をを判別
 			ScriptEngineManager manager = new ScriptEngineManager();
 			ScriptEngine engine = manager.getEngineByName("js");
 
 			// JavaScriptの実行
-			Object obj = engine.eval(String.format("(%s)", sb.toString()));
+			Object obj = engine.eval(String.format("(%s)", jsonSb.toString()));
 			// リフレクションでScriptObjectMirrorクラスの取得
 			Class scriptClass = Class.forName("jdk.nashorn.api.scripting.ScriptObjectMirror");
 			// リフレクションでキーセットを取得
@@ -159,7 +163,26 @@ public class Address_jp {
 
 		} catch(Exception e) {
 			e.printStackTrace();
-			System.exit(1);
+			//bufferReaderの接続を解除
+			if (bufferReader != null) {
+				try {
+					bufferReader.close();
+					System.exit(1);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					System.exit(1);
+				}
+			}
+		} finally {
+			//bufferReaderの接続を解除
+			if (bufferReader != null) {
+				try {
+					bufferReader.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+			}
 		}
 	}
 
